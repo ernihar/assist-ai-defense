@@ -1,8 +1,5 @@
 """
 Smoke test: verifies the project scaffolding loads correctly.
-
-This is the test CI runs first to confirm the environment is wired
-correctly before any guardrail logic is added.
 """
 from app.config.settings import Settings, settings
 

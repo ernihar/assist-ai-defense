@@ -94,6 +94,8 @@ class TestDispatchRequestSchema:
 
     @pytest.mark.guardrail
     def test_missing_required_field_is_rejected(self):
+        # It creates a new dictionary that is exactly the same as VALID_REQUEST, 
+        # except it removes the "priority" key entirely.
         data = {k: v for k, v in VALID_REQUEST.items() if k != "priority"}
         with pytest.raises(ValidationError):
             DispatchRequest(**data)
