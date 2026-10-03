@@ -1,20 +1,20 @@
 """
 Tests for the character validation guardrail.
 
-Covers:
-- Valid dispatch requests pass and reach query_llm().
-- Invalid incident_id / grid / priority / description are rejected.
-- The LLM is never called when validation fails (fail-closed proof).
-- The whitelist regex behaves as documented.
-- Character validation cannot catch prompt injection made of normal
-  letters (documented limitation, checked directly instead of assumed).
+NOTE on Commit 2.5: the whitelist regex moved from schemas.py to
+validators.py (it is now a reusable function instead of a method glued to
+one class). The import line below was updated to point at the new file,
+but every test's BEHAVIOR is identical to Commit 2 — same inputs, same
+expected pass/fail outcomes. This proves the refactor did not change what
+gets accepted or rejected, only how the check is organized internally.
 """
 from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
 
-from app.guardrails.schemas import ALLOWED_CHARACTERS_PATTERN, DispatchRequest
+from app.guardrails.validators import ALLOWED_CHARACTERS_PATTERN
+from app.guardrails.schemas import DispatchRequest
 from app.guardrails.pipeline import GuardrailRejection, protected_query_llm
 
 
@@ -121,7 +121,7 @@ class TestProtectedQueryLlmFailClosed:
             "incident_id": "2045",
             "grid": "Grid Five Bravo",
             "priority": "URGENT",
-            "description": "Shots fired",
+            "description": "Shots fired here now",
         }
         with pytest.raises(GuardrailRejection):
             protected_query_llm(bad_data)
@@ -132,7 +132,7 @@ class TestProtectedQueryLlmFailClosed:
             "incident_id": "2045",
             "grid": "Grid Five Bravo",
             "priority": "URGENT",
-            "description": "Shots fired",
+            "description": "Shots fired here now",
         }
         with patch("app.guardrails.pipeline.query_llm") as mock_query_llm:
             with pytest.raises(GuardrailRejection):
