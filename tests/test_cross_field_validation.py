@@ -131,6 +131,19 @@ class TestStructuredErrorReporting:
         assert "incident_id" in field_names
 
     @pytest.mark.guardrail
+    def test_multiple_bad_fields_reported(self):
+        bad_data = {**VALID_REQUEST, "incident_id": "bad", "grid": "zz"}
+
+        with pytest.raises(GuardrailRejection) as exc_info:
+            protected_query_llm(bad_data)
+
+        errors = exc_info.value.as_field_errors()
+        field_names = [error["field"] for error in errors]
+
+        assert "incident_id" in field_names
+        assert "grid" in field_names
+
+    @pytest.mark.guardrail
     def test_as_field_errors_handles_cross_field_errors_safely(self):
         """
         The HIGH-priority-needs-real-description rule is a MODEL-level
@@ -148,4 +161,15 @@ class TestStructuredErrorReporting:
             protected_query_llm(bad_data)
 
         errors = exc_info.value.as_field_errors()
+        assert any(error["field"] == "request" for error in errors)
+
+    @pytest.mark.guardrail
+    def test_cross_field_error_reported(self):
+        bad_data = {**VALID_REQUEST, "priority": "HIGH", "description": "Shots fir"}
+
+        with pytest.raises(GuardrailRejection) as exc_info:
+            protected_query_llm(bad_data)
+
+        errors = exc_info.value.as_field_errors()
+
         assert any(error["field"] == "request" for error in errors)
